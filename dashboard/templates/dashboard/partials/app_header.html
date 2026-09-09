@@ -1,0 +1,15 @@
+{% include "dashboard/partials/logo.html" %}
+<div class="nav-wrap">
+  <button class="icon-btn" onclick="toggleMenu(event)" title="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="dropdown" onclick="event.stopPropagation()">
+    <a class="{% if active == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:dashboard' %}">Dashboard (Home)</a>
+    <a class="{% if active == 'classes' %}active{% endif %}" href="{% url 'dashboard:classes' %}">Manage Class</a>
+    <a class="{% if active == 'leaderboard' %}active{% endif %}" href="{% url 'dashboard:leaderboard' %}">Leader Board</a>
+    <a class="{% if active == 'scoreboard' %}active{% endif %}" href="{% url 'dashboard:scoreboard' %}">Quizzes</a>
+    <a class="{% if active == 'studentscores' %}active{% endif %}" href="{% url 'dashboard:student_scores' %}">Students Scores</a>
+    <a class="{% if active == 'performance' %}active{% endif %}" href="{% url 'dashboard:performance' %}">Performance Tracker</a>
+    <a href="{% url 'dashboard:logout' %}">Logout</a>
+  </div>
+</div>

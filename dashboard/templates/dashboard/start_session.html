@@ -1,0 +1,50 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Start Game Session — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="dashboard" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h2 class="page-title">Start a Game Session</h2>
+
+  <div class="card page-card" style="margin-bottom:20px;">
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label>Quiz</label>
+        <select name="quiz" required>
+          {% for q in quizzes %}
+            <option value="{{ q.pk }}">{{ q.title }} ({{ q.level_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Students playing</label>
+        {% for s in students %}
+          <label style="display:block; font-weight:400; margin-bottom:4px;">
+            <input type="checkbox" name="students" value="{{ s.pk }}"> {{ s.name }} ({{ s.grade }})
+          </label>
+        {% endfor %}
+      </div>
+      <button class="btn btn-primary" type="submit">Start Session</button>
+    </form>
+  </div>
+
+  <div class="card page-card">
+    <strong style="font-size:13px;">ACTIVE SESSIONS</strong>
+    <table style="margin-top:10px;">
+      <thead><tr><th>Code</th><th>Quiz</th><th>Students</th><th>Started</th></tr></thead>
+      <tbody>
+      {% for s in active_sessions %}
+        <tr>
+          <td style="font-family:monospace; font-weight:800; font-size:16px;">{{ s.code }}</td>
+          <td>{{ s.quiz.title }}</td>
+          <td>{{ s.students.count }}</td>
+          <td>{{ s.created_at|timesince }} ago</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="muted">No active sessions.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

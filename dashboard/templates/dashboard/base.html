@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Gamio — Teacher Dashboard{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+</head>
+<body>
+<div id="app">
+  <div class="shell">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="toast {% if message.tags %}{{ message.tags }}{% endif %}" data-toast>{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<script>
+  // Close any open nav dropdown when clicking outside it.
+  document.addEventListener('click', function(e){
+    document.querySelectorAll('.dropdown.open').forEach(function(dd){
+      if(!dd.contains(e.target) && !e.target.closest('.icon-btn')){
+        dd.classList.remove('open');
+      }
+    });
+  });
+  function toggleMenu(e){
+    e.stopPropagation();
+    var dd = e.currentTarget.parentElement.querySelector('.dropdown');
+    if(dd) dd.classList.toggle('open');
+  }
+  // Auto-dismiss toast messages, same timing as the original mock-up.
+  document.querySelectorAll('[data-toast]').forEach(function(el){
+    setTimeout(function(){ el.remove(); }, 2200);
+  });
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

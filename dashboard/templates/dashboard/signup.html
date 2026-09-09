@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Create your account — Gamio{% endblock %}
+{% block content %}
+<div class="topbar standalone">
+  {% include "dashboard/partials/logo.html" %}
+  <a class="back-link" href="{% url 'dashboard:login' %}">&larr; Back to sign in</a>
+</div>
+<div class="auth-wrap">
+  <div class="card auth-card" style="max-width:440px;">
+    {% include "dashboard/partials/logo.html" %}
+    <h2>Create your account</h2>
+    <div class="sub">Set up your class in a few minutes.</div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="field" style="text-align:left;">
+        <label for="id_full_name">Full name</label>
+        <input type="text" id="id_full_name" name="full_name" placeholder="Enter your full name" value="{{ form.full_name.value|default_if_none:'' }}">
+        {% for e in form.full_name.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="field" style="text-align:left;">
+        <label for="id_class_name">Class / Section</label>
+        <input type="text" id="id_class_name" name="class_name" placeholder="e.g. Grade 1 - Hope" value="{{ form.class_name.value|default_if_none:'' }}">
+      </div>
+      <div class="field" style="text-align:left;">
+        <label for="id_username">User name</label>
+        <input type="text" id="id_username" name="username" placeholder="Choose a user name" value="{{ form.username.value|default_if_none:'' }}">
+        {% for e in form.username.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="field" style="text-align:left;">
+        <label for="id_password">Password</label>
+        <input type="password" id="id_password" name="password" placeholder="At least 8 characters">
+        {% for e in form.password.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="field" style="text-align:left;">
+        <label for="id_confirm_password">Confirm password</label>
+        <input type="password" id="id_confirm_password" name="confirm_password" placeholder="Re-enter your password">
+      </div>
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <label class="checkline"><input type="checkbox" required> I agree to Gamio's Terms of Use and confirm I'm a school staff member.</label>
+      <button class="btn btn-primary btn-block" type="submit">Sign up</button>
+    </form>
+    <div class="switch-line">Already have an account? <a href="{% url 'dashboard:login' %}">Sign in</a></div>
+  </div>
+</div>
+{% endblock %}

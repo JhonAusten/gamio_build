@@ -1,0 +1,109 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Dashboard — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="dashboard" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h1 class="page-title" style="margin-bottom:2px;">Welcome back, {{ request.user.profile.display_name|default:request.user.username }}</h1>
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+    <div class="muted">Here's what's happening in your class today.</div>
+    <a class="btn btn-secondary" href="{% url 'dashboard:classes' %}">🎮 Manage Class</a>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card stat-card"><div class="stat-label">Total students</div><div class="stat-value">{{ stat_total_students }}</div></div>
+    <div class="card stat-card"><div class="stat-label">Avg. score</div><div class="stat-value">{% if stat_avg_score != "—" %}{{ stat_avg_score }}%{% else %}—{% endif %}</div></div>
+    <div class="card stat-card"><div class="stat-label">Badges earned</div><div class="stat-value">{{ stat_badges }}</div></div>
+    <div class="card stat-card"><div class="stat-label">Needs attention</div><div class="stat-value danger">{{ stat_needs_attention }}</div></div>
+  </div>
+
+  {% if not ready_quiz %}
+    <div class="card upload-bar">
+      <p>Upload a lesson file — Gamio turns it into a ready-to-play quiz.</p>
+      <button class="btn btn-primary" type="button" onclick="document.getElementById('uploadOverlay').style.display='flex'">Upload file</button>
+    </div>
+    {% else %}
+    <div class="gen-banner">
+      <div>
+        <div class="msg">Quiz generated — questions ready</div>
+        <div class="file">{{ ready_quiz.source_filename }}</div>
+      </div>
+      <div class="gen-actions">
+        <form method="post" action="{% url 'dashboard:publish_quiz' ready_quiz.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">Publish to game</button>
+        </form>
+        <a class="btn btn-secondary" href="{% url 'dashboard:edit_questions' ready_quiz.pk %}">Edit questions</a>
+        <form method="post" action="{% url 'dashboard:discard_quiz' ready_quiz.pk %}" onsubmit="return confirm('Discard this quiz and upload a different file?');">
+          {% csrf_token %}
+          <button class="btn btn-secondary" type="submit" style="border-color:var(--red); color:var(--red);">Discard &amp; re-upload</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="two-col">
+    <div class="card page-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong style="font-size:13px;">CLASS LEADERBOARD</strong><span class="muted">This week</span>
+      </div>
+      {% if top_students %}
+      <table><tbody>
+      {% for s in top_students %}
+        <tr class="rank-row {% if forloop.first %}gold{% endif %}">
+          <td><span class="avatar" style="background:{{ s.color_hex }}">{{ s.name|slice:":2"|upper }}</span>{{ s.name }}</td>
+          <td style="text-align:right; font-weight:800;">{{ s.points }} pts</td>
+        </tr>
+      {% endfor %}
+      </tbody></table>
+      {% else %}
+        <div class="muted">Add students to start tracking points.</div>
+      {% endif %}
+    </div>
+    <div class="card page-card">
+      <strong style="font-size:13px;">Performance tracker</strong>
+      <div class="perf-block great" style="margin-top:10px;">
+        <div class="title">DOING GREAT</div>
+        {% for s in great_students %}
+          <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
+        {% empty %}
+          <div class="perf-row"><span class="muted">No data yet</span></div>
+        {% endfor %}
+      </div>
+      <div class="perf-block support">
+        <div class="title">NEEDS SUPPORT</div>
+        {% for s in support_students %}
+          <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
+        {% empty %}
+          <div class="perf-row"><span class="muted">No data yet</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="uploadOverlay" style="display:none;" onclick="if(event.target===this) this.style.display='none'">
+  <div class="card modal" onclick="event.stopPropagation()">
+    <h3>Upload a lesson file</h3>
+    <div class="sub">Gamio turns it into a ready-to-play quiz.</div>
+    <form method="post" action="{% url 'dashboard:upload_quiz' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label class="dropzone" for="id_source_file" style="display:block;">
+        <div>📄 Click to choose a file, or drag it here</div>
+        <div style="font-size:11px; margin-top:4px;">PDF, DOCX, or PPTX up to 20MB</div>
+      </label>
+      <input type="file" id="id_source_file" name="source_file" accept=".pdf,.docx,.pptx" style="margin-bottom:14px; width:100%;" required>
+      <div class="field" style="margin-top:4px; margin-bottom:0;">
+        <label>Add this quiz to</label>
+        <select name="level_group">
+          <option value="Preschool">Preschool</option>
+          <option value="Elementary">Elementary</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" onclick="document.getElementById('uploadOverlay').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" type="submit">Generate quiz</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

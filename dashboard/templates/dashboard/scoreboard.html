@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Quizzes — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="scoreboard" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h2 class="page-title">Quizzes</h2>
+  <p class="muted" style="margin-top:-8px; margin-bottom:18px;">Published quizzes, grouped by level. Open a section to see how each one is performing.</p>
+
+  {% for section in sections %}
+    <div class="accordion-section">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="toggle">
+        <input type="hidden" name="level" value="{{ section.level }}">
+        <button class="accordion-tab" type="submit">
+          {{ section.level }} <span class="accordion-count">{{ section.count }}</span>
+          <span class="accordion-chevron {% if section.is_open %}open{% endif %}">▾</span>
+        </button>
+      </form>
+      {% if section.is_open %}
+        <div class="accordion-panel">
+          {% if section.rows %}
+            <table class="quiz-table">
+              <thead><tr><th>Quiz</th><th>Subject</th><th>Avg. score</th><th>Needs review</th></tr></thead>
+              <tbody>
+              {% for q in section.rows %}
+                <tr>
+                  <td><a class="quiz-link" href="{% url 'dashboard:edit_questions' q.pk %}">{{ q.title }}</a></td>
+                  <td>{{ q.subject }}</td>
+                  <td>{% if q.average_score is not None %}{{ q.average_score }}%{% else %}—{% endif %}</td>
+                  <td><span class="wrong-count {% if q.wrong_count > 0 %}high{% endif %}">{{ q.wrong_count }} student{{ q.wrong_count|pluralize }}</span></td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="muted" style="padding:16px 4px;">No published quizzes in this level yet.</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

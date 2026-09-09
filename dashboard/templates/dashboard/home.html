@@ -1,0 +1,34 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Gamio — Turn any lesson into a game{% endblock %}
+{% block content %}
+<div class="topbar standalone">
+  {% include "dashboard/partials/logo.html" %}
+  <a class="btn btn-primary" href="{% url 'dashboard:login' %}">Teacher login</a>
+</div>
+<div class="card">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">AI-powered · game-based learning</span>
+      <h1>Turn any lesson into <span class="accent">a game students love</span></h1>
+      <p>Gamio helps teachers build quizzes in seconds with AI, and helps preschool and elementary students learn through points, badges, and friendly competition.</p>
+      <a class="btn btn-primary" href="{% url 'dashboard:login' %}">Teacher login</a>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong style="font-size:13px;">CLASS LEADERBOARD</strong>
+        <span class="muted">This week</span>
+      </div>
+      <table>
+        <tbody>
+        {% for l in weekly_leaders %}
+          <tr class="rank-row {% if l.pts == 30 %}gold{% endif %}">
+            <td><span class="avatar" style="background:{{ l.color }}">{{ l.init }}</span>{{ l.name }}</td>
+            <td style="text-align:right; font-weight:800;">{{ l.pts }} pts</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

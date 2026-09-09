@@ -1,0 +1,39 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Students Scores — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="studentscores" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h2 class="page-title">Students Scores</h2>
+
+  <form method="get" class="grade-filter">
+    <label for="classSelect">Class</label>
+    <select id="classSelect" name="class" onchange="this.form.submit()">
+      {% for c in classes %}
+        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>{{ c.display_name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="grade-filter-panel">
+    <table>
+      <thead><tr><th>Student</th><th>Latest quiz</th><th style="text-align:right;">Score</th><th style="text-align:right;">Status</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.quiz }}</td>
+          <td style="text-align:right; font-weight:800;">{% if r.score is not None %}{{ r.score }}%{% else %}—{% endif %}</td>
+          <td style="text-align:right;">
+            {% if r.status == "Great" %}<span class="status-pill status-great">Great</span>
+            {% elif r.status %}<span class="status-pill status-support">Needs Support</span>
+            {% else %}<span class="muted">Not played yet</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="muted" style="text-align:center; padding:22px;">No students in {{ current_class.display_name }} yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

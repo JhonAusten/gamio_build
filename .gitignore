@@ -1,0 +1,20 @@
+# Environment & secrets
+.env
+
+# Virtual environment
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+media/
+
+# Godot (if your Godot project lives in the same repo folder)
+.godot/
+export_presets.cfg
+
+# Editor cruft
+.vscode/

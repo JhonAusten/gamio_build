@@ -1,0 +1,42 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Manage Class — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="classes" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h2 class="page-title">Manage Class</h2>
+  <p class="muted" style="margin-top:-8px; margin-bottom:18px;">Create a class for each grade/section you teach, then manage its roster and start game sessions from inside it.</p>
+
+  <div class="card page-card" style="margin-bottom:20px;">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label for="id_grade">Grade level</label>
+          {{ form.grade }}
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="id_section">Section name</label>
+          {{ form.section }}
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px;" type="submit">+ Create class</button>
+    </form>
+  </div>
+
+  <div class="class-grid">
+    {% for c in classes %}
+      <div class="char-card">
+        <form method="post" action="{% url 'dashboard:remove_class' c.pk %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="char-remove" type="submit" title="Delete class">✕</button>
+        </form>
+        <div style="font-weight:800; font-size:15px; margin-bottom:4px;">{{ c.display_name }}</div>
+        <div class="muted" style="margin-bottom:12px;">{{ c.student_count }} student{{ c.student_count|pluralize }}</div>
+        <a class="btn btn-secondary btn-block" href="{% url 'dashboard:class_detail' c.pk %}">Open class</a>
+      </div>
+    {% empty %}
+      <div class="muted" style="padding:16px 4px;">No classes yet — create your first one above.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

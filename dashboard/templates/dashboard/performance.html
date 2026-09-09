@@ -1,0 +1,29 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Performance Tracker — Gamio{% endblock %}
+{% block content %}
+{% include "dashboard/partials/app_header.html" with active="performance" %}
+<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
+  <h2 class="page-title">Performance Tracker</h2>
+
+  <form method="get" class="grade-filter">
+    <label for="classSelect">Class</label>
+    <select id="classSelect" name="class" onchange="this.form.submit()">
+      {% for c in classes %}
+        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>{{ c.display_name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="grade-filter-panel" style="padding-top:10px;">
+    {% for r in rows %}
+      <div class="bar-row">
+        <span>{{ r.name }}</span>
+        <div class="bar-track"><div class="bar-fill {% if r.pct >= 60 %}good{% else %}bad{% endif %}" style="width:{{ r.pct }}%"></div></div>
+        <span class="pct">{{ r.pct }}%</span>
+      </div>
+    {% empty %}
+      <div class="muted" style="text-align:center; padding:22px;">No quiz results in {{ current_class.display_name }} yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

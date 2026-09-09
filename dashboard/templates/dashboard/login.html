@@ -1,0 +1,35 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Sign in — Gamio{% endblock %}
+{% block content %}
+<div class="topbar standalone">
+  {% include "dashboard/partials/logo.html" %}
+  <a class="back-link" href="{% url 'dashboard:home' %}">&larr; Back home</a>
+</div>
+<div class="auth-wrap">
+  <div class="card auth-card">
+    {% include "dashboard/partials/logo.html" %}
+    <h2>Sign in to your account</h2>
+    <div class="sub">Track progress, manage badges, and view student reports.</div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="field" style="text-align:left;">
+        <label for="id_username">User name</label>
+        <input type="text" id="id_username" name="username" placeholder="Enter your user name" value="{{ form.username.value|default_if_none:'' }}">
+      </div>
+      <div class="field" style="text-align:left;">
+        <label for="id_password">Password</label>
+        <input type="password" id="id_password" name="password" placeholder="Enter your password">
+      </div>
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <div class="between">
+        <label class="checkline" style="margin:0;"><input type="checkbox"> Remember password</label>
+        <a href="{% url 'dashboard:forgot_password' %}">Forgot password?</a>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+    </form>
+    <div class="switch-line">Don't have an account? <a href="{% url 'dashboard:signup' %}">Create one</a></div>
+  </div>
+</div>
+{% endblock %}
