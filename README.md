@@ -48,7 +48,6 @@ pip install -r requirements.txt
 
 python manage.py migrate
 python manage.py createsuperuser   # optional, for /admin/
-#@dmin--admin@school.com--1234@sadwater
 
 # optional: seed a demo teacher (user: demo / password: demo1234)
 # with sample students, quizzes, and scores
