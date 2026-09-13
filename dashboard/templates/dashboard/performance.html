@@ -1,29 +1,52 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Performance Tracker — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
-{% include "dashboard/partials/app_header.html" with active="performance" %}
-<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
-  <h2 class="page-title">Performance Tracker</h2>
+<div class="topbar standalone">
+  {% include "dashboard/partials/app_header.html" with active="performance" %}
+</div>
 
-  <form method="get" class="grade-filter">
-    <label for="classSelect">Class</label>
-    <select id="classSelect" name="class" onchange="this.form.submit()">
+<div class="card dashboard-card">
+  <div class="dash-head" style="margin-bottom: 20px;">
+    <div class="dash-head-left">
+      <h1 class="dash-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #111827;">Performance Tracker</h1>
+    </div>
+  </div>
+
+  <form method="get" id="performanceClassForm" style="margin-bottom: 24px;">
+    <select id="classSelect" name="class" class="dash-select" style="max-width: 250px; font-weight: 700; font-size: 13.5px;" onchange="this.form.submit()">
       {% for c in classes %}
-        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>{{ c.display_name }}</option>
+        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>
+          {% if c.section and c.section != c.grade and c.section != 'Default' and c.section != 'General' %}{{ c.grade }} - {{ c.section }}{% else %}{{ c.grade }}{% endif %} ({{ c.students.count }})
+        </option>
+      {% empty %}
+        <option value="">No classes yet</option>
       {% endfor %}
     </select>
   </form>
 
-  <div class="grade-filter-panel" style="padding-top:10px;">
-    {% for r in rows %}
-      <div class="bar-row">
-        <span>{{ r.name }}</span>
-        <div class="bar-track"><div class="bar-fill {% if r.pct >= 60 %}good{% else %}bad{% endif %}" style="width:{{ r.pct }}%"></div></div>
-        <span class="pct">{{ r.pct }}%</span>
-      </div>
-    {% empty %}
-      <div class="muted" style="text-align:center; padding:22px;">No quiz results in {{ current_class.display_name }} yet.</div>
-    {% endfor %}
-  </div>
+  {% if rows %}
+    <div class="perf-table-box">
+      {% for r in rows %}
+        <div class="perf-track-row">
+          <div class="perf-student-name">{{ r.name }}</div>
+          <div class="perf-bar-track">
+            <div class="perf-bar-fill {% if r.pct >= 60 %}good{% else %}bad{% endif %}" style="width: {{ r.pct }}%;"></div>
+          </div>
+          <div class="perf-score-pct">{{ r.pct }}%</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="perf-empty-box">
+      {% if current_class %}
+        No students in this grade yet
+      {% else %}
+        No classes yet &mdash; please create a class first.
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -1,39 +1,68 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Students Scores — Gamio{% endblock %}
+{% block title %}Students Score — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
-{% include "dashboard/partials/app_header.html" with active="studentscores" %}
-<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
-  <h2 class="page-title">Students Scores</h2>
+<div class="topbar standalone">
+  {% include "dashboard/partials/app_header.html" with active="studentscores" %}
+</div>
 
-  <form method="get" class="grade-filter">
-    <label for="classSelect">Class</label>
-    <select id="classSelect" name="class" onchange="this.form.submit()">
+<div class="card dashboard-card">
+  <div class="dash-head" style="margin-bottom: 20px;">
+    <div class="dash-head-left">
+      <h1 class="dash-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #111827;">Students Score</h1>
+    </div>
+  </div>
+
+  <form method="get" id="studentScoresClassForm" style="margin-bottom: 24px;">
+    <select id="classSelect" name="class" class="dash-select" style="max-width: 250px; font-weight: 700; font-size: 13.5px;" onchange="this.form.submit()">
       {% for c in classes %}
-        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>{{ c.display_name }}</option>
+        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>
+          {% if c.section and c.section != c.grade and c.section != 'Default' and c.section != 'General' %}{{ c.grade }} - {{ c.section }}{% else %}{{ c.grade }}{% endif %} ({{ c.students.count }})
+        </option>
+      {% empty %}
+        <option value="">No classes yet</option>
       {% endfor %}
     </select>
   </form>
 
-  <div class="grade-filter-panel">
-    <table>
-      <thead><tr><th>Student</th><th>Latest quiz</th><th style="text-align:right;">Score</th><th style="text-align:right;">Status</th></tr></thead>
-      <tbody>
-      {% for r in rows %}
-        <tr>
-          <td>{{ r.name }}</td>
-          <td>{{ r.quiz }}</td>
-          <td style="text-align:right; font-weight:800;">{% if r.score is not None %}{{ r.score }}%{% else %}—{% endif %}</td>
-          <td style="text-align:right;">
-            {% if r.status == "Great" %}<span class="status-pill status-great">Great</span>
-            {% elif r.status %}<span class="status-pill status-support">Needs Support</span>
-            {% else %}<span class="muted">Not played yet</span>{% endif %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="4" class="muted" style="text-align:center; padding:22px;">No students in {{ current_class.display_name }} yet.</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+  <div class="ss-table-container">
+    <div class="ss-table-header">
+      <div>STUDENT</div>
+      <div>LATEST QUIZ</div>
+      <div>SCORE</div>
+      <div>STATUS</div>
+    </div>
+
+    {% if rows %}
+      <div class="ss-table-box">
+        {% for r in rows %}
+          <div class="ss-table-row">
+            <div class="ss-cell-student">{{ r.name }}</div>
+            <div class="ss-cell-quiz">{{ r.quiz }}</div>
+            <div class="ss-cell-score">{% if r.score is not None %}{{ r.score }}%{% else %}—{% endif %}</div>
+            <div class="ss-cell-status">
+              {% if r.status == "Great" %}
+                <span class="ss-status-great">Great</span>
+              {% elif r.status %}
+                <span class="ss-status-support">Needs Support</span>
+              {% else %}
+                <span class="ss-status-none">—</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ss-empty-box">
+        {% if current_class %}
+          No students in this grade yet
+        {% else %}
+          No classes yet &mdash; please create a class first.
+        {% endif %}
+      </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

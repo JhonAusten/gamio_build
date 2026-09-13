@@ -1,15 +1,24 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Edit — {{ quiz.title }} — Gamio{% endblock %}
+{% block title %}Edit questions — {{ quiz.title }} — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
 <div class="topbar standalone">
-  {% include "dashboard/partials/logo.html" %}
-  <a class="back-link" href="{% url 'dashboard:dashboard' %}">&larr; Back</a>
+  {% include "dashboard/partials/app_header.html" with active="scoreboard" %}
 </div>
-<div class="card page-card">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+
+<div class="card edit-page-card">
+  <div class="edit-header">
     <div>
-      <h2 class="page-title" style="margin-bottom:2px;">{{ quiz.title }}</h2>
-      <div class="muted">{{ quiz.source_filename|default:"Manually created" }} · {{ quiz.level_group }}{% if quiz.is_published %} · Published{% endif %}</div>
+      <h1 class="dash-title">Edit questions</h1>
+      <div class="dash-subtitle">{{ quiz.source_filename|default:quiz.title }} &middot; {{ quiz.questions.count }} question{{ quiz.questions.count|pluralize }}</div>
+    </div>
+    <div class="edit-header-actions">
+      <button class="btn btn-secondary save-btn" type="submit" form="editForm" name="action" value="save">Save draft</button>
+      <button class="btn btn-primary publish-btn" type="submit" form="editForm" name="action" value="publish">
+        {% if quiz.is_published %}Republish{% else %}Publish to game{% endif %}
+      </button>
     </div>
   </div>
 
@@ -18,35 +27,25 @@
     {% for question in quiz.questions.all %}
       <div class="card q-card">
         <div class="q-head">
-          <div style="flex:1;">
-            <div class="q-num">Question {{ forloop.counter }}</div>
-            <input class="q-text" type="text" name="q_text_{{ question.id }}" value="{{ question.text }}">
-          </div>
-          <div class="q-tools">
-            <button type="submit" formaction="{% url 'dashboard:delete_question' quiz.pk question.id %}" formnovalidate title="Delete question">🗑</button>
-          </div>
+          <div class="q-num">Question {{ forloop.counter }}</div>
+          <input class="q-text" type="text" name="q_text_{{ question.id }}" value="{{ question.text }}" placeholder="Enter question">
+          <button class="q-delete" type="submit" formaction="{% url 'dashboard:delete_question' quiz.pk question.id %}" formnovalidate title="Delete question">&times;</button>
         </div>
         <div class="opt-list">
           {% for option in question.options.all %}
-            <label class="opt">
-              <input type="radio" name="q_correct_{{ question.id }}" value="{{ option.id }}" {% if option.is_correct %}checked{% endif %}>
-              <input type="text" name="opt_text_{{ option.id }}" value="{{ option.text }}">
+            <label class="opt-row">
+              <input type="radio" name="q_correct_{{ question.id }}" value="{{ option.id }}" {% if option.is_correct %}checked{% endif %} class="opt-radio">
+              <input type="text" name="opt_text_{{ option.id }}" value="{{ option.text }}" class="opt-input" placeholder="Option text">
             </label>
           {% endfor %}
         </div>
       </div>
     {% empty %}
-      <div class="muted" style="padding:14px 4px;">No questions yet — add one below.</div>
+      <div class="muted" style="padding:24px; text-align:center;">No questions yet — add one below.</div>
     {% endfor %}
 
-    <button class="add-q" type="submit" formaction="{% url 'dashboard:add_question' quiz.pk %}" formnovalidate>+ Add question</button>
-
-    <div class="modal-actions" style="justify-content:space-between; margin-top:22px;">
-      <button class="btn btn-secondary" type="submit" name="action" value="save">Save draft</button>
-      <button class="btn btn-primary" type="submit" name="action" value="publish">
-        {% if quiz.is_published %}Republish{% else %}Publish to game{% endif %}
-      </button>
-    </div>
+    <button class="add-q-btn" type="submit" formaction="{% url 'dashboard:add_question' quiz.pk %}" formnovalidate>+ Add question</button>
   </form>
 </div>
 {% endblock %}
+

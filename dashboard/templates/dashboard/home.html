@@ -1,34 +1,40 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Gamio — Turn any lesson into a game{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
 <div class="topbar standalone">
   {% include "dashboard/partials/logo.html" %}
   <a class="btn btn-primary" href="{% url 'dashboard:login' %}">Teacher login</a>
 </div>
-<div class="card">
+<div class="card home-card">
   <div class="hero">
-    <div>
-      <span class="eyebrow">AI-powered · game-based learning</span>
-      <h1>Turn any lesson into <span class="accent">a game students love</span></h1>
+    <div class="hero-content">
+      <span class="eyebrow">AI-powered &middot; game-based learning</span>
+      <h1>Turn any lesson into <span class="accent">a<br>game students love</span></h1>
       <p>Gamio helps teachers build quizzes in seconds with AI, and helps preschool and elementary students learn through points, badges, and friendly competition.</p>
-      <a class="btn btn-primary" href="{% url 'dashboard:login' %}">Teacher login</a>
+      <a class="btn btn-primary hero-btn" href="{% url 'dashboard:login' %}">Teacher login</a>
     </div>
-    <div class="card" style="padding:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <strong style="font-size:13px;">CLASS LEADERBOARD</strong>
-        <span class="muted">This week</span>
+    <div class="home-leaderboard-card">
+      <div class="leaderboard-header">
+        <span class="leaderboard-title">CLASS LEADERBOARD</span>
+        <span class="leaderboard-subtitle">This week</span>
       </div>
-      <table>
-        <tbody>
+      <div class="leaderboard-divider"></div>
+      <div class="leaderboard-list">
         {% for l in weekly_leaders %}
-          <tr class="rank-row {% if l.pts == 30 %}gold{% endif %}">
-            <td><span class="avatar" style="background:{{ l.color }}">{{ l.init }}</span>{{ l.name }}</td>
-            <td style="text-align:right; font-weight:800;">{{ l.pts }} pts</td>
-          </tr>
+          <div class="leaderboard-row">
+            <div class="student-info">
+              <span class="avatar avatar-{{ forloop.counter0 }}" style="background:{{ l.color }}">{{ l.init }}</span>
+              <span class="student-name">{{ l.name }}</span>
+            </div>
+            <span class="student-pts">{{ l.pts }} pts</span>
+          </div>
         {% endfor %}
-        </tbody>
-      </table>
+      </div>
     </div>
   </div>
 </div>
 {% endblock %}
+

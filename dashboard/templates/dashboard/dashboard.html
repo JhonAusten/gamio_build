@@ -1,98 +1,148 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Dashboard — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
-{% include "dashboard/partials/app_header.html" with active="dashboard" %}
-<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
-  <h1 class="page-title" style="margin-bottom:2px;">Welcome back, {{ request.user.profile.display_name|default:request.user.username }}</h1>
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
-    <div class="muted">Here's what's happening in your class today.</div>
-    <a class="btn btn-secondary" href="{% url 'dashboard:classes' %}">🎮 Manage Class</a>
+<div class="topbar standalone">
+  {% include "dashboard/partials/app_header.html" with active="dashboard" %}
+</div>
+
+<div class="card dashboard-card">
+  <div class="dash-head">
+    <div class="dash-head-left">
+      <h1 class="dash-title">Welcome back, {{ request.user.profile.display_name|default:request.user.username }}</h1>
+      <div class="dash-subtitle">Here's what's happening in your class today.</div>
+    </div>
+    <div class="dash-head-actions">
+      <a class="btn btn-secondary dash-action-btn" href="{% url 'dashboard:classes' %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>Manage students
+      </a>
+      <a class="btn btn-primary dash-action-btn" href="{% url 'dashboard:scoreboard' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+          <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+          <path d="M6 12h4m-2-2v4m10-2h.01m-3-1h.01"></path>
+        </svg>Game UI
+      </a>
+    </div>
   </div>
 
   <div class="stat-grid">
-    <div class="card stat-card"><div class="stat-label">Total students</div><div class="stat-value">{{ stat_total_students }}</div></div>
-    <div class="card stat-card"><div class="stat-label">Avg. score</div><div class="stat-value">{% if stat_avg_score != "—" %}{{ stat_avg_score }}%{% else %}—{% endif %}</div></div>
-    <div class="card stat-card"><div class="stat-label">Badges earned</div><div class="stat-value">{{ stat_badges }}</div></div>
-    <div class="card stat-card"><div class="stat-label">Needs attention</div><div class="stat-value danger">{{ stat_needs_attention }}</div></div>
+    <div class="card stat-card">
+      <div class="stat-label">Total students</div>
+      <div class="stat-value">{{ stat_total_students }}</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Avg. score</div>
+      <div class="stat-value">{% if stat_avg_score != "—" %}{{ stat_avg_score }}%{% else %}—{% endif %}</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Badges earned</div>
+      <div class="stat-value">{{ stat_badges }}</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Needs attention</div>
+      <div class="stat-value danger">{{ stat_needs_attention }}</div>
+    </div>
   </div>
 
   {% if not ready_quiz %}
-    <div class="card upload-bar">
-      <p>Upload a lesson file — Gamio turns it into a ready-to-play quiz.</p>
-      <button class="btn btn-primary" type="button" onclick="document.getElementById('uploadOverlay').style.display='flex'">Upload file</button>
+  <div class="upload-bar">
+    <p>Upload a lesson file &mdash; Gamio turns it into a ready-to-play quiz.</p>
+    <button class="btn btn-primary upload-btn" type="button"
+      onclick="document.getElementById('uploadOverlay').style.display='flex'">Upload file</button>
+  </div>
+  {% else %}
+  <div class="gen-banner">
+    <div>
+      <div class="msg">Quiz generated &mdash; questions ready</div>
+      <div class="file">{{ ready_quiz.source_filename }}</div>
     </div>
-    {% else %}
-    <div class="gen-banner">
-      <div>
-        <div class="msg">Quiz generated — questions ready</div>
-        <div class="file">{{ ready_quiz.source_filename }}</div>
-      </div>
-      <div class="gen-actions">
-        <form method="post" action="{% url 'dashboard:publish_quiz' ready_quiz.pk %}">
-          {% csrf_token %}
-          <button class="btn btn-primary" type="submit">Publish to game</button>
-        </form>
-        <a class="btn btn-secondary" href="{% url 'dashboard:edit_questions' ready_quiz.pk %}">Edit questions</a>
-        <form method="post" action="{% url 'dashboard:discard_quiz' ready_quiz.pk %}" onsubmit="return confirm('Discard this quiz and upload a different file?');">
-          {% csrf_token %}
-          <button class="btn btn-secondary" type="submit" style="border-color:var(--red); color:var(--red);">Discard &amp; re-upload</button>
-        </form>
-      </div>
+    <div class="gen-actions">
+      <form method="post" action="{% url 'dashboard:publish_quiz' ready_quiz.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Publish to game</button>
+      </form>
+      <a class="btn btn-secondary edit-btn" href="{% url 'dashboard:edit_questions' ready_quiz.pk %}">Edit question</a>
+      <form method="post" action="{% url 'dashboard:discard_quiz' ready_quiz.pk %}"
+        onsubmit="return confirm('Discard this quiz and upload a different file?');" style="display:inline;">
+        {% csrf_token %}
+        <button class="btn btn-secondary discard-btn" type="submit">Discard &amp; re-upload</button>
+      </form>
     </div>
+  </div>
   {% endif %}
 
   <div class="two-col">
-    <div class="card page-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <strong style="font-size:13px;">CLASS LEADERBOARD</strong><span class="muted">This week</span>
+    <div class="card dash-col-card dash-leaderboard">
+      <div class="leaderboard-header">
+        <span class="leaderboard-title">CLASS LEADERBOARD</span>
+        <span class="leaderboard-subtitle">This week</span>
       </div>
       {% if top_students %}
-      <table><tbody>
-      {% for s in top_students %}
-        <tr class="rank-row {% if forloop.first %}gold{% endif %}">
-          <td><span class="avatar" style="background:{{ s.color_hex }}">{{ s.name|slice:":2"|upper }}</span>{{ s.name }}</td>
-          <td style="text-align:right; font-weight:800;">{{ s.points }} pts</td>
-        </tr>
-      {% endfor %}
-      </tbody></table>
+      <div class="leaderboard-list">
+        {% for s in top_students %}
+        <div class="leaderboard-row {% if forloop.first %}gold-row{% endif %}">
+          <div class="student-info">
+            <span class="avatar avatar-{{ forloop.counter0 }}" style="background:{{ s.color_hex }}">{{ s.name|slice:":2"|upper }}</span>
+            <span class="student-name">{{ s.name }}</span>
+          </div>
+          <span class="student-pts">{{ s.points }} pts</span>
+        </div>
+        {% endfor %}
+      </div>
       {% else %}
-        <div class="muted">Add students to start tracking points.</div>
+      <div class="muted" style="padding: 16px 4px; font-size: 13.5px;">Add students to start tracking points.</div>
       {% endif %}
     </div>
-    <div class="card page-card">
-      <strong style="font-size:13px;">Performance tracker</strong>
-      <div class="perf-block great" style="margin-top:10px;">
+
+    <div class="card dash-col-card dash-performance">
+      <div class="perf-header">Performance tracker</div>
+      <div class="perf-block great">
         <div class="title">DOING GREAT</div>
         {% for s in great_students %}
-          <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
+        <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
         {% empty %}
-          <div class="perf-row"><span class="muted">No data yet</span></div>
+        <div class="perf-row"><span style="color:#1E4E35; opacity:0.8; font-size:13px;">No data yet</span></div>
         {% endfor %}
       </div>
       <div class="perf-block support">
         <div class="title">NEEDS SUPPORT</div>
         {% for s in support_students %}
-          <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
+        <div class="perf-row"><span>{{ s.name }}</span><span>{{ s.average_score }}% avg</span></div>
         {% empty %}
-          <div class="perf-row"><span class="muted">No data yet</span></div>
+        <div class="perf-row"><span style="color:#6B1717; opacity:0.8; font-size:13px;">No data yet</span></div>
         {% endfor %}
       </div>
     </div>
   </div>
 </div>
 
-<div class="overlay" id="uploadOverlay" style="display:none;" onclick="if(event.target===this) this.style.display='none'">
+<div class="overlay" id="uploadOverlay" style="display:none;"
+  onclick="if(event.target===this) this.style.display='none'">
   <div class="card modal" onclick="event.stopPropagation()">
     <h3>Upload a lesson file</h3>
     <div class="sub">Gamio turns it into a ready-to-play quiz.</div>
     <form method="post" action="{% url 'dashboard:upload_quiz' %}" enctype="multipart/form-data">
       {% csrf_token %}
-      <label class="dropzone" for="id_source_file" style="display:block;">
-        <div>📄 Click to choose a file, or drag it here</div>
-        <div style="font-size:11px; margin-top:4px;">PDF, DOCX, or PPTX up to 20MB</div>
+      <label class="dropzone" for="id_source_file" id="dropzoneLabel">
+        <div class="dropzone-text">Click to choose a file, or drag it here</div>
+        <div class="dropzone-sub">PDF, DOCX, or PPTX up to 20MB</div>
       </label>
-      <input type="file" id="id_source_file" name="source_file" accept=".pdf,.docx,.pptx" style="margin-bottom:14px; width:100%;" required>
-      <div class="field" style="margin-top:4px; margin-bottom:0;">
+      <input type="file" id="id_source_file" name="source_file" accept=".pdf,.docx,.pptx" style="display:none;" required
+        onchange="handleFileSelected(this)">
+
+      <div class="file-chip" id="fileChip" style="display:none;">
+        <span class="file-chip-name" id="fileChipName"></span>
+        <button type="button" class="file-chip-close" onclick="clearFileSelection()">&times;</button>
+      </div>
+
+      <div class="field" style="margin-top:16px; margin-bottom:0; text-align:left;">
         <label>Add this quiz to</label>
         <select name="level_group">
           <option value="Preschool">Preschool</option>
@@ -100,10 +150,29 @@
         </select>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" type="button" onclick="document.getElementById('uploadOverlay').style.display='none'">Cancel</button>
+        <button class="btn btn-secondary" type="button"
+          onclick="document.getElementById('uploadOverlay').style.display='none'">Cancel</button>
         <button class="btn btn-primary" type="submit">Generate quiz</button>
       </div>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('fileChipName').textContent = input.files[0].name;
+      document.getElementById('fileChip').style.display = 'flex';
+      document.getElementById('dropzoneLabel').style.borderColor = 'var(--green)';
+    }
+  }
+  function clearFileSelection() {
+    var input = document.getElementById('id_source_file');
+    input.value = '';
+    document.getElementById('fileChip').style.display = 'none';
+    document.getElementById('dropzoneLabel').style.borderColor = '';
+  }
+</script>
 {% endblock %}

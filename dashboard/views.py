@@ -50,24 +50,40 @@ def signup_view(request):
     form = SignUpForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
-        user = User.objects.create_user(username=data["username"], password=data["password"])
+        username = data["username"].strip()
+        user = User.objects.filter(username__iexact=username).first()
+        if not user:
+            user = User.objects.create_user(username=username, password=data["password"])
+        else:
+            user.set_password(data["password"])
+            user.save()
         name_parts = data["full_name"].split(" ", 1)
         user.first_name = name_parts[0]
         user.last_name = name_parts[1] if len(name_parts) > 1 else ""
         user.save()
-        TeacherProfile.objects.create(user=user, class_name=data["class_name"])
-        messages.success(request, "Account created — sign in to continue.")
-        return redirect("dashboard:login")
+        profile, _ = TeacherProfile.objects.get_or_create(user=user)
+        profile.class_name = data["class_name"]
+        profile.save()
+        login(request, user, backend='dashboard.backends.CaseInsensitiveModelBackend')
+        messages.success(request, f"Welcome to Gamio, {user.first_name or user.username}!")
+        return redirect("dashboard:dashboard")
     return render(request, "dashboard/signup.html", {"form": form})
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard:dashboard")
-    form = AuthenticationForm(request, data=request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        login(request, form.get_user())
-        return redirect("dashboard:dashboard")
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        from django.contrib.auth import authenticate
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user, backend='dashboard.backends.CaseInsensitiveModelBackend')
+            return redirect("dashboard:dashboard")
+        form = AuthenticationForm(request, data=request.POST)
+    else:
+        form = AuthenticationForm(request)
     return render(request, "dashboard/login.html", {"form": form})
 
 
@@ -85,12 +101,24 @@ def forgot_password(request):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "send_code" and step == 1:
-            email = request.POST.get("email", "").strip()
-            if not email:
-                messages.error(request, "Enter the email linked to your account.")
+            ident = request.POST.get("email", "").strip()
+            if not ident:
+                messages.error(request, "Enter your username or email.")
             else:
+                user = (
+                    User.objects.filter(email__iexact=ident).first()
+                    or User.objects.filter(username__iexact=ident).first()
+                )
+                if not user:
+                    for u in User.objects.all():
+                        full = f"{u.first_name} {u.last_name}".strip()
+                        if full.lower() == ident.lower():
+                            user = u
+                            break
                 code = f"{random.randint(0, 999999):06d}"
-                request.session["forgot_email"] = email
+                request.session["forgot_ident"] = ident
+                if user:
+                    request.session["forgot_user_id"] = user.id
                 request.session["forgot_code"] = code
                 request.session["forgot_step"] = 2
                 messages.info(request, f"Demo mode: your reset code is {code} (normally emailed to you).")
@@ -109,8 +137,14 @@ def forgot_password(request):
         elif action == "change_password" and step == 3:
             pw1 = request.POST.get("password1", "")
             pw2 = request.POST.get("password2", "")
-            email = request.session.get("forgot_email")
-            user = User.objects.filter(email=email).first() if email else None
+            user_id = request.session.get("forgot_user_id")
+            user = User.objects.filter(id=user_id).first() if user_id else None
+            if not user:
+                ident = request.session.get("forgot_ident", "")
+                user = (
+                    User.objects.filter(email__iexact=ident).first()
+                    or User.objects.filter(username__iexact=ident).first()
+                )
             if len(pw1) < 8:
                 messages.error(request, "Password must be at least 8 characters.")
             elif pw1 != pw2:
@@ -119,10 +153,11 @@ def forgot_password(request):
                 if user:
                     user.set_password(pw1)
                     user.save()
+                    messages.success(request, "Password reset successfully! Please sign in.")
                 request.session["forgot_step"] = 4
                 step = 4
         elif action == "restart":
-            for key in ("forgot_step", "forgot_email", "forgot_code"):
+            for key in ("forgot_step", "forgot_email", "forgot_ident", "forgot_user_id", "forgot_code"):
                 request.session.pop(key, None)
             return redirect("dashboard:login")
 

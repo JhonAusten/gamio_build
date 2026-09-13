@@ -14,10 +14,7 @@ class SignUpForm(forms.Form):
     confirm_password = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
 
     def clean_username(self):
-        username = self.cleaned_data["username"]
-        if User.objects.filter(username__iexact=username).exists():
-            raise forms.ValidationError("That user name is already taken.")
-        return username
+        return self.cleaned_data["username"].strip()
 
     def clean_password(self):
         password = self.cleaned_data["password"]
