@@ -1,44 +1,67 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Quizzes — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
-{% include "dashboard/partials/app_header.html" with active="scoreboard" %}
-<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
-  <h2 class="page-title">Quizzes</h2>
-  <p class="muted" style="margin-top:-8px; margin-bottom:18px;">Published quizzes, grouped by level. Open a section to see how each one is performing.</p>
+<div class="topbar standalone">
+  {% include "dashboard/partials/app_header.html" with active="scoreboard" %}
+</div>
 
-  {% for section in sections %}
-    <div class="accordion-section">
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="toggle">
-        <input type="hidden" name="level" value="{{ section.level }}">
-        <button class="accordion-tab" type="submit">
-          {{ section.level }} <span class="accordion-count">{{ section.count }}</span>
-          <span class="accordion-chevron {% if section.is_open %}open{% endif %}">▾</span>
-        </button>
-      </form>
-      {% if section.is_open %}
-        <div class="accordion-panel">
-          {% if section.rows %}
-            <table class="quiz-table">
-              <thead><tr><th>Quiz</th><th>Subject</th><th>Avg. score</th><th>Needs review</th></tr></thead>
-              <tbody>
-              {% for q in section.rows %}
-                <tr>
-                  <td><a class="quiz-link" href="{% url 'dashboard:edit_questions' q.pk %}">{{ q.title }}</a></td>
-                  <td>{{ q.subject }}</td>
-                  <td>{% if q.average_score is not None %}{{ q.average_score }}%{% else %}—{% endif %}</td>
-                  <td><span class="wrong-count {% if q.wrong_count > 0 %}high{% endif %}">{{ q.wrong_count }} student{{ q.wrong_count|pluralize }}</span></td>
-                </tr>
-              {% endfor %}
-              </tbody>
-            </table>
-          {% else %}
-            <div class="muted" style="padding:16px 4px;">No published quizzes in this level yet.</div>
-          {% endif %}
-        </div>
-      {% endif %}
+<div class="card dashboard-card">
+  <div class="dash-head" style="margin-bottom: 22px;">
+    <div class="dash-head-left">
+      <h1 class="dash-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #111827;">Quizzes</h1>
     </div>
-  {% endfor %}
+  </div>
+
+  <div class="quiz-sections-list">
+    {% for section in sections %}
+      <div class="quiz-section-item">
+        <form method="post" style="margin: 0; display: inline-block;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="toggle">
+          <input type="hidden" name="level" value="{{ section.level }}">
+          <button class="quiz-pill-btn" type="submit">
+            <span>{{ section.level }} ({{ section.count }})</span>
+            <svg class="quiz-pill-arrow {% if section.is_open %}open{% endif %}" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 1L5 5L9 1" />
+            </svg>
+          </button>
+        </form>
+
+        {% if section.is_open %}
+          <div class="quiz-table-card">
+            <div class="quiz-table-head">
+              <div>QUIZ</div>
+              <div>SUBJECT</div>
+              <div>AVG. SCORE</div>
+              <div>GOT WRONG</div>
+            </div>
+            <div class="quiz-table-body">
+              {% for q in section.rows %}
+                <div class="quiz-table-row">
+                  <div><a class="quiz-title-link" href="{% url 'dashboard:edit_questions' q.pk %}">{{ q.title }}</a></div>
+                  <div>{{ q.subject }}</div>
+                  <div>{% if q.average_score is not None %}{{ q.average_score }}%{% else %}—{% endif %}</div>
+                  <div>
+                    {% if q.total_attempts %}
+                      {{ q.wrong_count }} of {{ q.total_attempts }} student{{ q.total_attempts|pluralize }}
+                    {% elif q.wrong_count %}
+                      {{ q.wrong_count }} student{{ q.wrong_count|pluralize }}
+                    {% else %}
+                      0 students
+                    {% endif %}
+                  </div>
+                </div>
+              {% empty %}
+                <div class="quiz-empty-row">No published quizzes in this level yet.</div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

@@ -1,91 +1,87 @@
 {% extends "dashboard/base.html" %}
-{% block title %}{{ school_class.display_name }} — Gamio{% endblock %}
+{% load static %}
+{% block title %}Manage Students — {{ school_class.display_name }} — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
 <div class="topbar standalone">
-  {% include "dashboard/partials/logo.html" %}
-  <a class="back-link" href="{% url 'dashboard:classes' %}">&larr; Back to classes</a>
+  {% include "dashboard/partials/app_header.html" with active="classes" %}
 </div>
 
-<div class="card page-card" style="margin-bottom:20px;">
-  <h2 class="page-title" style="margin-bottom:4px;">{{ school_class.display_name }}</h2>
-  <p class="muted" style="margin-top:0; margin-bottom:18px;">Add students, then start a game session for the whole class.</p>
-
-  <div class="row2" style="align-items:start;">
-    <form method="post">
-      {% csrf_token %}
-      <div class="row2">
-        <div class="field" style="margin-bottom:0;">
-          <label for="id_name">Student name</label>
-          {{ form.name }}
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label for="id_gender">Assign player</label>
-          {{ form.gender }}
-        </div>
-      </div>
-      <button class="btn btn-primary" style="margin-top:14px;" type="submit" {% if not available_colors %}disabled{% endif %}>+ Add student</button>
-      {% if not available_colors %}
-        <div class="hint" style="margin-top:8px; color:var(--red);">All {{ color_palette|length }} detector color slots are in use for this class.</div>
-      {% endif %}
-    </form>
-
-    <div>
-      <form method="post" action="{% url 'dashboard:start_class_session' school_class.pk %}">
-        {% csrf_token %}
-        <div class="field" style="margin-bottom:0;">
-          <label>Start a session for this class</label>
-          <select name="quiz" required>
-            {% for q in quizzes %}
-              <option value="{{ q.pk }}">{{ q.title }} ({{ q.level_group }})</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button class="btn btn-primary" style="margin-top:14px;" type="submit">▶ Start session</button>
-      </form>
-
-      {% if active_sessions %}
-        <div class="muted" style="margin-top:14px; font-size:12px;">Active session code(s):</div>
-        {% for s in active_sessions %}
-          <div style="font-family:monospace; font-weight:800; font-size:16px;">{{ s.code }} <span class="muted" style="font-family:inherit; font-weight:400; font-size:12px;">— {{ s.quiz.title }}</span></div>
-        {% endfor %}
-      {% endif %}
+<div class="card dashboard-card">
+  <div class="dash-head" style="margin-bottom:18px;">
+    <div class="dash-head-left">
+      <h1 class="dash-title">Manage Students</h1>
+      <div class="dash-subtitle">Add a student's name and choose their player type &mdash; Gamio builds their in-game character right away, with their name shown directly on it.</div>
     </div>
   </div>
-</div>
 
-<div class="card page-card">
-  <strong style="font-size:13px;">Game characters · {{ roster|length }} student{{ roster|length|pluralize }}</strong>
-  <div class="char-grid">
-    {% for s in roster %}
-      <div class="char-card">
-        <form method="post" action="{% url 'dashboard:remove_student_from_class' school_class.pk s.pk %}">
-          {% csrf_token %}
-          <button class="char-remove" type="submit" title="Remove student">✕</button>
-        </form>
-        <div class="char-figure" style="background:{{ s.color_hex }}22;">
-          <svg viewBox="0 0 100 100" width="72" height="72">
-            <circle cx="50" cy="38" r="22" fill="{{ s.color_hex }}"/>
-            <path d="M20 92 C20 66 32 56 50 56 C68 56 80 66 80 92 Z" fill="{{ s.color_hex }}"/>
-            {% if s.gender == "Female" %}
-              <path d="M25 34 C25 16 36 8 50 8 C64 8 75 16 75 34 C75 40 71 42 68 40 C68 30 60 24 50 24 C40 24 32 30 32 40 C29 42 25 40 25 34 Z" fill="#2B2A25"/>
-              <path d="M27 34 C27 50 27 58 24 66" stroke="#2B2A25" stroke-width="7" fill="none" stroke-linecap="round"/>
-              <path d="M73 34 C73 50 73 58 76 66" stroke="#2B2A25" stroke-width="7" fill="none" stroke-linecap="round"/>
-              <circle cx="50" cy="10" r="6" fill="#F2799A"/>
-            {% else %}
-              <path d="M27 30 C27 14 37 6 50 6 C63 6 73 14 73 30 C73 34 70 36 66 33 C66 24 59 20 50 20 C41 20 34 24 34 33 C30 36 27 34 27 30 Z" fill="#2B2A25"/>
-            {% endif %}
-            <circle cx="41" cy="38" r="4.5" fill="#2B2A25"/>
-            <circle cx="59" cy="38" r="4.5" fill="#2B2A25"/>
-            <path d="M40 50 Q50 56 60 50" stroke="#2B2A25" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </svg>
+  <div class="card sub-card form-sub-card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="add-student-grid">
+        <div class="field-wrap">
+          <label style="display:block; font-size:13px; font-weight:700; color:#374151; margin-bottom:8px;" for="id_name">Student name</label>
+          <input type="text" id="id_name" name="name" class="dash-input" placeholder="e.g. Marie Reed" value="{{ form.name.value|default_if_none:'' }}" required>
+          {% for e in form.name.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+          <button class="dash-btn-add" type="submit" {% if not available_colors %}disabled{% endif %}>+ Add student &amp; create character</button>
+          {% if not available_colors %}
+            <div class="hint" style="margin-top:8px; color:var(--red);">All color slots are full.</div>
+          {% endif %}
         </div>
-        <div class="char-nameplate" style="background:{{ s.color_hex }};">{{ s.name }}</div>
-        <div class="char-colortag">{{ s.gender }}</div>
-        <div class="char-colortag"><span class="swatch" style="background:{{ s.color_hex }}"></span>{{ s.color_name }}</div>
+        <div class="field-wrap">
+          <label style="display:block; font-size:13px; font-weight:700; color:#374151; margin-bottom:8px;" for="id_gender">Assign player</label>
+          <select id="id_gender" name="gender" class="dash-select" required>
+            <option value="">Choose one</option>
+            <option value="Female" {% if form.gender.value == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Male" {% if form.gender.value == 'Male' %}selected{% endif %}>Male</option>
+          </select>
+          <div style="margin-top: 18px;">
+            <select class="dash-select" name="grade_display" disabled style="background-color: #FAFAFA; opacity: 0.95;">
+              <option value="{{ school_class.grade }}">{{ school_class.grade }}</option>
+            </select>
+          </div>
+        </div>
       </div>
-    {% empty %}
-      <div class="muted" style="padding:16px 4px;">No students in this class yet — add your first one above.</div>
-    {% endfor %}
+    </form>
+  </div>
+
+  <div class="card sub-card chars-sub-card">
+    <div class="chars-head">
+      <span class="chars-title">Game characters &middot; {{ roster|length }} student{{ roster|length|pluralize }}</span>
+      {% if roster %}
+        <div class="show-grade-wrap">
+          <span>Show grade</span>
+          <select class="dash-select" style="padding: 8px 36px 8px 14px; font-size: 13px; width: auto;">
+            <option>{{ school_class.grade }} ({{ roster|length }})</option>
+          </select>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="chars-grid">
+      {% for s in roster %}
+        <div class="char-card-figma">
+          <form method="post" action="{% url 'dashboard:remove_student_from_class' school_class.pk s.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="char-delete-btn" type="submit" title="Remove student">&times;</button>
+          </form>
+          <img class="char-avatar-img" src="{% if s.gender == 'Female' %}{% static 'dashboard/images/char_female.png' %}{% else %}{% static 'dashboard/images/char_male.png' %}{% endif %}" alt="{{ s.name }}">
+          <div class="char-name-pill" style="background: {{ s.color_hex|default:'#52A688' }};">{{ s.name }}</div>
+          <div class="char-sub-info">{{ s.grade }} &middot; {{ s.gender }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if roster %}
+      <form method="post" action="{% url 'dashboard:start_class_session' school_class.pk %}" style="text-align:center;">
+        {% csrf_token %}
+        {% if quizzes %}<input type="hidden" name="quiz" value="{{ quizzes.first.pk }}">{% endif %}
+        <button class="btn-use-students" type="submit">Use this students for the quiz</button>
+        <div class="use-students-caption">This sends {{ roster|length }} student{{ roster|length|pluralize }} ({{ school_class.grade }}) back to the Game UI as today's players.</div>
+      </form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

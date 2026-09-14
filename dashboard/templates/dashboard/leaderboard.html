@@ -1,35 +1,58 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Leader Board — Gamio{% endblock %}
+{% block body_class %}home-body{% endblock %}
+{% block app_class %}home-app{% endblock %}
+{% block shell_class %}home-shell{% endblock %}
 {% block content %}
-{% include "dashboard/partials/app_header.html" with active="leaderboard" %}
-<div class="card" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:24px;">
-  <h2 class="page-title">Leader Board</h2>
+<div class="topbar standalone">
+  {% include "dashboard/partials/app_header.html" with active="leaderboard" %}
+</div>
 
-  <form method="get" class="grade-filter">
-    <label for="classSelect">Class</label>
-    <select id="classSelect" name="class" onchange="this.form.submit()">
+<div class="card dashboard-card">
+  <div class="dash-head" style="margin-bottom: 20px;">
+    <div class="dash-head-left">
+      <h1 class="dash-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #111827;">Leader Board</h1>
+    </div>
+  </div>
+
+  <form method="get" id="leaderboardClassForm" style="margin-bottom: 24px;">
+    <select id="classSelect" name="class" class="dash-select" style="max-width: 250px; font-weight: 700; font-size: 13.5px;" onchange="this.form.submit()">
       {% for c in classes %}
-        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>{{ c.display_name }}</option>
+        <option value="{{ c.pk }}" {% if current_class and c.pk == current_class.pk %}selected{% endif %}>
+          {% if c.section and c.section != c.grade and c.section != 'Default' and c.section != 'General' %}{{ c.grade }} - {{ c.section }}{% else %}{{ c.grade }}{% endif %} ({{ c.students.count }})
+        </option>
+      {% empty %}
+        <option value="">No classes yet</option>
       {% endfor %}
     </select>
   </form>
 
-  <div class="grade-filter-panel">
-    <table>
-      <thead><tr><th style="width:40px;">#</th><th>Student</th><th style="text-align:right;">Points</th><th style="text-align:right;">Badges</th></tr></thead>
-      <tbody>
+  <div class="lb-table-container">
+    <div class="lb-table-header">
+      <div>RANK</div>
+      <div>STUDENT</div>
+      <div>POINTS</div>
+      <div>BADGES</div>
+    </div>
+
+    <div class="lb-rows-list">
       {% for s in rows %}
-        <tr class="rank-row {% if forloop.first %}gold{% endif %}">
-          <td>{{ forloop.counter }}</td>
-          <td><span class="avatar" style="background:{{ s.color_hex }}">{{ s.name|slice:":2"|upper }}</span>{{ s.name }}</td>
-          <td style="text-align:right; font-weight:800;">{{ s.points }}</td>
-          <td style="text-align:right;">{{ s.badges }} 🏅</td>
-        </tr>
+        <div class="lb-row-card">
+          <div>{{ forloop.counter }}</div>
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 10px;">{{ s.name }}</div>
+          <div>{{ s.points }}</div>
+          <div>{{ s.badges }}</div>
+        </div>
       {% empty %}
-        <tr><td colspan="4" class="muted" style="text-align:center; padding:22px;">No students in {{ current_class.display_name }} yet.</td></tr>
+        <div class="lb-empty-card">
+          {% if current_class %}
+            No students in this grade yet
+          {% else %}
+            No classes yet &mdash; please create a class first.
+          {% endif %}
+        </div>
       {% endfor %}
-      </tbody>
-    </table>
+    </div>
   </div>
 </div>
 {% endblock %}
