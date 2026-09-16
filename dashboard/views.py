@@ -1,32 +1,32 @@
+import json
 import random
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.db.models import Avg
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
-from .models import GameSession
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.db import IntegrityError
-from django.db.models import Count
-from .forms import ClassForm, QuizUploadForm, SignUpForm, StudentForm
-from .models import GameSession, SchoolClass
+from django.db.models import Avg, Count
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
+
 from .ai_quiz import generate_questions_with_ai
-from .forms import QuizUploadForm, SignUpForm, StudentForm
+from .forms import ClassForm, QuizUploadForm, SignUpForm, StudentForm
 from .models import (
     COLOR_PALETTE,
     GRADE_LEVELS,
     LEVEL_GROUPS,
+    GameSession,
     Option,
     Question,
     Quiz,
     QuizAttempt,
+    SchoolClass,
     Student,
     TeacherProfile,
 )
@@ -44,47 +44,199 @@ def home(request):
     return render(request, "dashboard/home.html", {"weekly_leaders": HOME_WEEKLY_LEADERS})
 
 
+def send_otp_email(recipient_email, code):
+    spaced_code = " ".join(str(code).strip())
+    subject = "Welcome to Gamio! 🎓"
+
+    message = (
+        f"Welcome to Gamio!\n\n"
+        f"Your verification code is:\n\n"
+        f"{spaced_code}\n\n"
+        f"If you did not request this verification code, please ignore this email."
+    )
+
+    html_message = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:28px 18px;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
+  <div style="max-width:540px;margin:0 auto;">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;margin:0 0 18px 0;letter-spacing:-0.4px;">Welcome to Gamio! &#127891;</h1>
+    <p style="font-size:15px;color:#4B5563;margin:0 0 24px 0;line-height:1.5;">Your verification code is:</p>
+    <div style="font-size:42px;font-weight:800;color:#2563EB;letter-spacing:12px;margin:0 0 32px 0;font-family:'Nunito Sans',-apple-system,BlinkMacSystemFont,sans-serif;">
+      {spaced_code}
+    </div>
+    <div style="font-size:12.5px;color:#9CA3AF;margin-top:40px;border-top:1px solid #E5E7EB;padding-top:16px;">
+      Gamio Learning Platform &bull; If you did not request this verification code, you can safely ignore this email.
+    </div>
+  </div>
+</body>
+</html>"""
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "Gamio <gamio.cecsystem@gmail.com>")
+    try:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=from_email,
+            to=[recipient_email]
+        )
+        msg.attach_alternative(html_message, "text/html")
+        msg.send(fail_silently=False)
+        return True, None
+    except UnicodeEncodeError:
+        try:
+            msg = EmailMultiAlternatives(
+                subject="Welcome to Gamio!",
+                body=message,
+                from_email=from_email,
+                to=[recipient_email]
+            )
+            msg.attach_alternative(html_message, "text/html")
+            msg.send(fail_silently=False)
+            return True, None
+        except Exception as exc:
+            return False, str(exc)
+    except Exception as exc:
+        return False, str(exc)
+
+
 def signup_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard:dashboard")
-    form = SignUpForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        data = form.cleaned_data
-        username = data["username"].strip()
-        user = User.objects.filter(username__iexact=username).first()
-        if not user:
-            user = User.objects.create_user(username=username, password=data["password"])
+
+    step = request.session.get("signup_step", 1)
+    signup_data = request.session.get("signup_data", {})
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        # --- STEP 2 ACTIONS ---
+        if step == 2 and action == "verify_code":
+            entered = "".join(request.POST.get(f"d{i}", "") for i in range(6)).strip()
+            expected = str(request.session.get("signup_code", "")).strip()
+
+            if entered and entered == expected:
+                data = request.session.get("signup_data", {})
+                username = data.get("username", "").strip()
+                try:
+                    user = User.objects.filter(username__iexact=username).first()
+                    if not user:
+                        user = User.objects.create_user(
+                            username=username,
+                            email=data.get("email", ""),
+                            password=data.get("password", "")
+                        )
+                    else:
+                        user.email = data.get("email", "")
+                        user.set_password(data.get("password", ""))
+                        user.save()
+                except IntegrityError:
+                    user = User.objects.filter(username__iexact=username).first()
+                    if user:
+                        user.email = data.get("email", "")
+                        user.set_password(data.get("password", ""))
+                        user.save()
+                    else:
+                        messages.error(request, "This username is already taken. Please choose another.")
+                        request.session["signup_step"] = 1
+                        return render(request, "dashboard/signup.html", {"form": SignUpForm(data), "step": 1})
+
+                name_parts = data.get("full_name", "").strip().split(" ", 1)
+                user.first_name = name_parts[0]
+                user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+                user.save()
+
+                profile, _ = TeacherProfile.objects.get_or_create(user=user)
+                profile.class_name = data.get("class_name", "").strip()
+                profile.save()
+
+                # Clean up session
+                for k in ("signup_step", "signup_code", "signup_data"):
+                    request.session.pop(k, None)
+
+                messages.success(request, f"Account created successfully for {user.first_name or user.username}! You can now sign in.")
+                return redirect("dashboard:home")
+            else:
+                messages.error(request, "That 6-digit code doesn't match. Please try again.")
+                return render(request, "dashboard/signup.html", {"step": 2, "email": signup_data.get("email")})
+
+        elif step == 2 and action == "resend_code":
+            code = f"{random.randint(0, 999999):06d}"
+            request.session["signup_code"] = code
+            email = signup_data.get("email")
+            sent, err = send_otp_email(email, code)
+            if sent:
+                messages.success(request, f"New verification code sent to {email}!")
+            else:
+                messages.info(request, f"New verification code sent to {email}. (Dev note: code is {code})")
+            return render(request, "dashboard/signup.html", {"step": 2, "email": email})
+
+        elif step == 2 and action == "edit_info":
+            request.session["signup_step"] = 1
+            form = SignUpForm(initial=signup_data)
+            return render(request, "dashboard/signup.html", {"form": form, "step": 1})
+
+        # --- STEP 1 FORM SUBMIT ---
         else:
-            user.set_password(data["password"])
-            user.save()
-        name_parts = data["full_name"].split(" ", 1)
-        user.first_name = name_parts[0]
-        user.last_name = name_parts[1] if len(name_parts) > 1 else ""
-        user.save()
-        profile, _ = TeacherProfile.objects.get_or_create(user=user)
-        profile.class_name = data["class_name"]
-        profile.save()
-        login(request, user, backend='dashboard.backends.CaseInsensitiveModelBackend')
-        messages.success(request, f"Welcome to Gamio, {user.first_name or user.username}!")
-        return redirect("dashboard:dashboard")
-    return render(request, "dashboard/signup.html", {"form": form})
+            form = SignUpForm(request.POST)
+            if form.is_valid():
+                data = form.cleaned_data
+                code = f"{random.randint(0, 999999):06d}"
+                request.session["signup_data"] = {
+                    "full_name": data["full_name"],
+                    "class_name": data["class_name"],
+                    "username": data["username"],
+                    "email": data["email"],
+                    "password": data["password"],
+                }
+                request.session["signup_code"] = code
+                request.session["signup_step"] = 2
+
+                sent, err = send_otp_email(data["email"], code)
+                if sent:
+                    messages.success(request, f"We sent a 6-digit code to {data['email']}. Please check your inbox!")
+                else:
+                    messages.info(request, f"We sent a 6-digit code to {data['email']}. (Dev note: code is {code})")
+
+                return render(request, "dashboard/signup.html", {"step": 2, "email": data["email"]})
+            else:
+                return render(request, "dashboard/signup.html", {"form": form, "step": 1})
+
+    # GET request
+    if step == 2 and signup_data.get("email"):
+        return render(request, "dashboard/signup.html", {"step": 2, "email": signup_data.get("email")})
+
+    form = SignUpForm(initial=signup_data if signup_data else None)
+    return render(request, "dashboard/signup.html", {"form": form, "step": 1})
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard:dashboard")
+
+    error_message = None
+    email_val = ""
+
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
+        ident = request.POST.get("email", "").strip() or request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
+        email_val = ident
+
         from django.contrib.auth import authenticate
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=ident, password=password)
         if user is not None:
             login(request, user, backend='dashboard.backends.CaseInsensitiveModelBackend')
             return redirect("dashboard:dashboard")
-        form = AuthenticationForm(request, data=request.POST)
-    else:
-        form = AuthenticationForm(request)
-    return render(request, "dashboard/login.html", {"form": form})
+        else:
+            error_message = "Invalid email or password. Please try again."
+
+    return render(request, "dashboard/login.html", {
+        "email_val": email_val,
+        "error_message": error_message,
+    })
 
 
 def logout_view(request):

@@ -9,12 +9,17 @@ class SignUpForm(forms.Form):
     class_name = forms.CharField(label="Class / Section", max_length=120,
                                   widget=forms.TextInput(attrs={"placeholder": "e.g. Grade 1 - Hope"}))
     username = forms.CharField(label="User name", max_length=150)
+    email = forms.EmailField(label="Email address", max_length=254,
+                             widget=forms.EmailInput(attrs={"placeholder": "e.g. teacher@gmail.com"}))
     password = forms.CharField(label="Password", widget=forms.PasswordInput,
                                 help_text="At least 8 characters")
     confirm_password = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
 
     def clean_username(self):
         return self.cleaned_data["username"].strip()
+
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()
 
     def clean_password(self):
         password = self.cleaned_data["password"]

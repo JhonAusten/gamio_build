@@ -40,6 +40,23 @@
   document.querySelectorAll('[data-toast]').forEach(function(el){
     setTimeout(function(){ el.remove(); }, 2200);
   });
+  // Toggle password field visibility (show / hide password)
+  function togglePasswordVisibility(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    var eyeIcon = btn.querySelector('.eye-icon');
+    var eyeOffIcon = btn.querySelector('.eye-off-icon');
+    if (eyeIcon && eyeOffIcon) {
+      eyeIcon.style.display = isPassword ? 'none' : 'block';
+      eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+    }
+    var newLabel = isPassword ? 'Hide password' : 'Show password';
+    btn.setAttribute('aria-label', newLabel);
+    btn.setAttribute('title', newLabel);
+    input.focus();
+  }
 </script>
 {% block extra_scripts %}{% endblock %}
 </body>

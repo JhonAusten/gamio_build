@@ -11,40 +11,145 @@
 <div class="auth-wrap">
   <div class="card auth-card">
     <div class="auth-logo">{% include "dashboard/partials/logo.html" %}</div>
-    <h2>Create your account</h2>
-    <div class="sub">Set up your class in a few minutes.</div>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      <div class="field">
-        <label for="id_full_name">Full name</label>
-        <input type="text" id="id_full_name" name="full_name" placeholder="Enter full name" value="{{ form.full_name.value|default_if_none:'' }}">
-        {% for e in form.full_name.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="field">
-        <label for="id_class_name">Class/Section</label>
-        <input type="text" id="id_class_name" name="class_name" placeholder="e.g Grade 1 - Hope" value="{{ form.class_name.value|default_if_none:'' }}">
-      </div>
-      <div class="field">
-        <label for="id_username">User name</label>
-        <input type="text" id="id_username" name="username" placeholder="Choose a user name" value="{{ form.username.value|default_if_none:'' }}">
-        {% for e in form.username.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="field">
-        <label for="id_password">Password</label>
-        <input type="password" id="id_password" name="password" placeholder="At least 8 characters">
-        {% for e in form.password.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="field">
-        <label for="id_confirm_password">Password</label>
-        <input type="password" id="id_confirm_password" name="confirm_password" placeholder="Re-enter your password">
-      </div>
-      {% if form.non_field_errors %}
-        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
-      {% endif %}
-      <label class="checkline"><input type="checkbox" required> I agree to Gamio's Terms of Use and confirm I'm a school staff member.</label>
-      <button class="btn btn-primary btn-block" type="submit">Sign up</button>
-    </form>
+
+    <div class="steps">
+      <div class="step-dot {% if step == 2 %}done{% else %}active{% endif %}"></div>
+      <div class="step-dot {% if step == 2 %}active{% endif %}"></div>
+    </div>
+
+    {% if step == 2 %}
+      <h2>Check your inbox</h2>
+      <div class="sub">Enter the 6-digit code we sent to <strong style="color:var(--text);">{{ email }}</strong>.</div>
+
+      <form id="otp-form" method="post" novalidate onsubmit="var btn=document.getElementById('otp-verify-btn'); if(btn && btn.dataset.submitting){return false;} if(btn){btn.dataset.submitting='true'; btn.style.pointerEvents='none'; btn.style.opacity='0.7'; btn.innerText='Verifying...';} return true;">
+        {% csrf_token %}
+        <div class="code-boxes" id="code-boxes">
+          {% for i in "012345" %}
+            <input name="d{{ i }}" id="code-d{{ i }}" maxlength="1" inputmode="numeric" autocomplete="one-time-code" required>
+          {% endfor %}
+        </div>
+        <div class="muted" style="margin-bottom:18px; font-size:13px; color:var(--muted);">
+          Didn't get it?
+          <button type="submit" name="action" value="resend_code" style="background:none;border:none;padding:0;color:var(--green); font-weight:800; cursor:pointer; font-family:inherit;">Resend code</button>
+          &bull;
+          <button type="submit" name="action" value="edit_info" style="background:none;border:none;padding:0;color:var(--muted); font-weight:700; cursor:pointer; font-family:inherit;">Edit details</button>
+        </div>
+        <button id="otp-verify-btn" class="btn btn-primary btn-block" type="submit" name="action" value="verify_code">Verify &amp; complete</button>
+      </form>
+
+    {% else %}
+      <h2>Create your account</h2>
+      <div class="sub">Set up your class in a few minutes.</div>
+      <form id="signup-form" method="post" novalidate onsubmit="var btn=document.getElementById('signup-submit-btn'); if(btn && btn.dataset.submitting){return false;} if(btn){btn.dataset.submitting='true'; btn.style.pointerEvents='none'; btn.style.opacity='0.7'; btn.innerText='Sending code...';} return true;">
+        {% csrf_token %}
+        <div class="field">
+          <label for="id_full_name">Full name</label>
+          <input type="text" id="id_full_name" name="full_name" placeholder="Enter full name" value="{{ form.full_name.value|default_if_none:'' }}">
+          {% for e in form.full_name.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="id_class_name">Class/Section</label>
+          <input type="text" id="id_class_name" name="class_name" placeholder="e.g Grade 1 - Hope" value="{{ form.class_name.value|default_if_none:'' }}">
+          {% for e in form.class_name.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="id_username">User name</label>
+          <input type="text" id="id_username" name="username" placeholder="Choose a user name" value="{{ form.username.value|default_if_none:'' }}">
+          {% for e in form.username.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="id_email">Email address</label>
+          <input type="email" id="id_email" name="email" placeholder="e.g. teacher@gmail.com" value="{{ form.email.value|default_if_none:'' }}">
+          {% for e in form.email.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="id_password">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="id_password" name="password" placeholder="At least 8 characters" autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password" onclick="togglePasswordVisibility('id_password', this)">
+              <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-off-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+          {% for e in form.password.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="id_confirm_password">Confirm password</label>
+          <div class="password-wrap">
+            <input type="password" id="id_confirm_password" name="confirm_password" placeholder="Re-enter your password" autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password" onclick="togglePasswordVisibility('id_confirm_password', this)">
+              <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-off-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+          {% for e in form.confirm_password.errors %}<div class="hint" style="color:var(--red);">{{ e }}</div>{% endfor %}
+        </div>
+        {% if form.non_field_errors %}
+          <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+        <label class="checkline"><input type="checkbox" required> I agree to Gamio's Terms of Use and confirm I'm a school staff member.</label>
+        <button id="signup-submit-btn" class="btn btn-primary btn-block" type="submit">Send verification code</button>
+      </form>
+    {% endif %}
+
     <div class="switch-line">Already have an account? <a href="{% url 'dashboard:login' %}">Sign in</a></div>
   </div>
 </div>
+
+<script>
+  // Auto-focus and auto-advance for the 6 OTP input boxes
+  (function(){
+    var container = document.getElementById('code-boxes');
+    if (!container) return;
+    var inputs = container.querySelectorAll('input');
+    if (!inputs.length) return;
+
+    inputs[0].focus();
+
+    inputs.forEach(function(input, idx){
+      input.addEventListener('input', function(e){
+        if (this.value.length >= 1) {
+          this.value = this.value.slice(-1); // keep 1 digit only
+          if (idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
+          }
+        }
+      });
+
+      input.addEventListener('keydown', function(e){
+        if (e.key === 'Backspace' && !this.value && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', function(e){
+        e.preventDefault();
+        var pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+        if (pasteData) {
+          var digits = pasteData.replace(/\D/g, '').slice(0, inputs.length);
+          for (var i = 0; i < digits.length; i++) {
+            inputs[i].value = digits[i];
+          }
+          if (digits.length < inputs.length) {
+            inputs[digits.length].focus();
+          } else {
+            inputs[inputs.length - 1].focus();
+          }
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}
