@@ -971,6 +971,51 @@ a.quiz-link:hover{ text-decoration:underline; }
   color: #A0AAB5;
   font-size: 13.5px;
 }
+.password-wrap{
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.password-wrap input{
+  width: 100%;
+  padding-right: 48px !important;
+}
+.password-toggle-btn{
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 6px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #9CA3AF;
+  border-radius: 8px;
+  line-height: 0;
+  transition: color 0.18s ease, background-color 0.18s ease, transform 0.12s ease;
+  user-select: none;
+  z-index: 2;
+}
+.password-toggle-btn:hover{
+  color: var(--green);
+  background-color: var(--green-soft);
+}
+.password-toggle-btn:active{
+  transform: translateY(-50%) scale(0.92);
+}
+.password-toggle-btn:focus-visible{
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+.password-toggle-btn svg{
+  display: block;
+  pointer-events: none;
+}
 .switch-line{
   font-size: 13px;
   margin-top: 22px;

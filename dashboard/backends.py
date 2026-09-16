@@ -17,19 +17,19 @@ class CaseInsensitiveModelBackend(ModelBackend):
         raw_username = str(username).strip()
         lower_username = raw_username.lower()
         
-        # 1. Exact or case-insensitive username match
-        user = User.objects.filter(username__iexact=raw_username).first()
+        # 1. Email match (case-insensitive, e.g. 'teacher@gmail.com')
+        user = User.objects.filter(email__iexact=raw_username).first()
         
-        # 2. Spelling tolerance: 'jhon' <-> 'john'
+        # 2. Exact or case-insensitive username match
+        if not user:
+            user = User.objects.filter(username__iexact=raw_username).first()
+        
+        # 3. Spelling tolerance: 'jhon' <-> 'john'
         if not user:
             if lower_username == 'jhon':
                 user = User.objects.filter(username__iexact='john').first()
             elif lower_username == 'john':
                 user = User.objects.filter(username__iexact='jhon').first()
-
-        # 3. Email match
-        if not user:
-            user = User.objects.filter(email__iexact=raw_username).first()
             
         # 4. Full name or part match
         if not user:
